@@ -148,23 +148,22 @@
                 <h2 class="font-bold text-blue-800 text-lg">2. DÉTAILS DE L'EXAMEN</h2>
             </div>
 
-            <div>
-                <label class="block mb-2 text-sm font-semibold">Ville du centre d'examen *</label>
-                <select id="centre_exam" required class="input-style">
-                    <option value="" disabled selected>Sélectionnez un centre</option>
-                    <option value="Douala">Douala</option>
-                    <option value="Buea">Buea</option>
-                    <option value="Dschang">Dschang</option>
-                    <option value="Ngaoundéré">Ngaoundéré</option>
-                    <option value="Yaoundé">Yaoundé</option>
-                    <option value="Maroua">Maroua</option>
-                    <option value="Garoua">Garoua</option>
-                    <option value="Bamenda">Bamenda</option>
-
-                </select>
+            <!-- Nouvelle section modifiée pour les cases à cocher multiples -->
+            <div class="md:col-span-2">
+                <label class="block mb-2 text-sm font-semibold text-red-600">Villes des centres d'examen (Cochez au moins 3 choix) *</label>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border border-gray-300 rounded-xl bg-gray-50">
+                    <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" name="centre_exam" value="Douala" class="w-4 h-4 text-blue-600"> <span>Douala</span></label>
+                    <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" name="centre_exam" value="Buea" class="w-4 h-4 text-blue-600"> <span>Buea</span></label>
+                    <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" name="centre_exam" value="Dschang" class="w-4 h-4 text-blue-600"> <span>Dschang</span></label>
+                    <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" name="centre_exam" value="Ngaoundéré" class="w-4 h-4 text-blue-600"> <span>Ngaoundéré</span></label>
+                    <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" name="centre_exam" value="Yaoundé" class="w-4 h-4 text-blue-600"> <span>Yaoundé</span></label>
+                    <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" name="centre_exam" value="Maroua" class="w-4 h-4 text-blue-600"> <span>Maroua</span></label>
+                    <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" name="centre_exam" value="Garoua" class="w-4 h-4 text-blue-600"> <span>Garoua</span></label>
+                    <label class="flex items-center space-x-2 cursor-pointer"><input type="checkbox" name="centre_exam" value="Bamenda" class="w-4 h-4 text-blue-600"> <span>Bamenda</span></label>
+                </div>
             </div>
 
-            <div>
+            <div class="md:col-span-2">
                 <label class="block mb-2 text-sm font-semibold">Session d'examen *</label>
                 <input type="text" id="session_exam" required class="input-style" placeholder="Ex: Session Juin 2026">
             </div>
@@ -208,7 +207,7 @@
                 <tr><td class="pdf-label">Ville de résidence</td><td id="res-ville_residence" class="pdf-value"></td></tr>
 
                 <tr><th colspan="2">DÉTAILS DE L'EXAMEN</th></tr>
-                <tr><td class="pdf-label">Ville du centre d'examen</td><td id="res-centre_exam" class="pdf-value"></td></tr>
+                <tr><td class="pdf-label">Centres d'examen (Choix)</td><td id="res-centre_exam" class="pdf-value"></td></tr>
                 <tr><td class="pdf-label">Session d'examen</td><td id="res-session_exam" class="pdf-value" style="color: #0d47a1; font-weight: bold;"></td></tr>
 
                 <tr><th colspan="2">ADMINISTRATION</th></tr>
@@ -229,7 +228,10 @@
         async function generateAndSend() {
             const btn = document.getElementById('submitBtn');
             
-            // 1. Récupération et nettoyage des données
+            // Récupération des cases cochées
+            const centresCoches = Array.from(document.querySelectorAll('input[name="centre_exam"]:checked')).map(cb => cb.value);
+            
+            // 1. Récupération et nettoyage des données textuelles
             const data = {
                 nom: document.getElementById('nom').value.trim(),
                 cni: document.getElementById('cni').value.trim(),
@@ -238,13 +240,19 @@
                 tel: document.getElementById('tel').value.trim(),
                 email: document.getElementById('email').value.trim(),
                 ville_residence: document.getElementById('ville_residence').value.trim(),
-                centre_exam: document.getElementById('centre_exam').value,
-                session_exam: document.getElementById('session_exam').value.trim()
+                session_exam: document.getElementById('session_exam').value.trim(),
+                centre_exam: centresCoches.join(', ') // Transforme le tableau en texte (ex: "Douala, Yaoundé, Buea")
             };
 
-            // 2. Vérification des champs obligatoires
-            if (!data.nom || !data.cni || !data.date_naiss || !data.lieu_naiss || !data.tel || !data.email || !data.ville_residence || !data.centre_exam || !data.session_exam) {
+            // 2. Vérification des champs obligatoires standards
+            if (!data.nom || !data.cni || !data.date_naiss || !data.lieu_naiss || !data.tel || !data.email || !data.ville_residence || !data.session_exam) {
                 alert('⚠️ Veuillez remplir tous les champs obligatoires (marqués par un *).');
+                return;
+            }
+
+            // 3. Vérification stricte : au moins 3 centres doivent être choisis
+            if (centresCoches.length < 3) {
+                alert('⚠️ Veuillez sélectionner au moins 3 centres d\'examen de votre choix.');
                 return;
             }
 
@@ -257,7 +265,7 @@
             const [year, month, day] = data.date_naiss.split('-');
             const dateNaissFormattee = `${day}/${month}/${year}`;
 
-            // 3. Remplissage du PDF 
+            // 4. Remplissage du PDF 
             document.getElementById('res-nom').innerText = data.nom.toUpperCase();
             document.getElementById('res-cni').innerText = data.cni;
             document.getElementById('res-naissance').innerText = `Le ${dateNaissFormattee} à ${data.lieu_naiss}`;
@@ -270,7 +278,7 @@
             const now = new Date();
             document.getElementById('res-date-now').innerText = now.toLocaleDateString('fr-FR') + ' à ' + now.toLocaleTimeString('fr-FR');
 
-            // 4. Génération PDF sur une seule page
+            // 5. Génération PDF sur une seule page
             const element = document.getElementById('pdf-content');
 
             const options = {
@@ -284,8 +292,8 @@
             try {
                 await html2pdf().set(options).from(element).save();
 
-                // 5. Envoi WhatsApp
-                const message = `*NOUVELLE PRÉ-INSCRIPTION - BABELIA*\n\n👤 Nom : ${data.nom}\n📱 WhatsApp : ${data.tel}\n📍 Ville : ${data.ville_residence}\n🏫 Centre : ${data.centre_exam}\n📅 Session : ${data.session_exam}\n\n_Le dossier PDF complet a été généré avec succès. Je vous l'envoie ci-joint._`;
+                // 6. Envoi WhatsApp (Mis au pluriel pour refléter les multiples choix)
+                const message = `*NOUVELLE PRÉ-INSCRIPTION - BABELIA*\n\n👤 Nom : ${data.nom}\n📱 WhatsApp : ${data.tel}\n📍 Ville : ${data.ville_residence}\n🏫 Centres choisis : ${data.centre_exam}\n📅 Session : ${data.session_exam}\n\n_Le dossier PDF complet a été généré avec succès. Je vous l'envoie ci-joint._`;
                 
                 const whatsappURL = `https://wa.me/${adminWhatsApp}?text=${encodeURIComponent(message)}`;
 
